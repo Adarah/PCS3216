@@ -45,10 +45,10 @@ DATA
     K   "H"
     K   "e"
     K   "l"
-    K   "1"
+    K   "l"
     K   "o"
     K   ","
-    K   32                      ; Program breaks if you try to use a space character
+    K   32                      ; Assembler breaks if you try to use a space character
     K   "w"
     K   "o"
     K   "r"

@@ -1,51 +1,8 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs;
 use std::io::{prelude::*, BufReader};
-
-#[derive(Debug)]
-struct Symbols {
-    table: HashMap<String, u16>,
-}
-
-impl Symbols {
-    pub fn new() -> Symbols {
-        let mut table: HashMap<String, u16> = HashMap::new();
-        table.insert("JP".to_string(), 0);
-        table.insert("JZ".to_string(), 1);
-        table.insert("JN".to_string(), 2);
-        table.insert("LV".to_string(), 3);
-        table.insert("+".to_string(), 4);
-        table.insert("-".to_string(), 5);
-        table.insert("*".to_string(), 6);
-        table.insert("/".to_string(), 7);
-        table.insert("LD".to_string(), 8);
-        table.insert("MM".to_string(), 9);
-        table.insert("SC".to_string(), 10);
-        table.insert("RS".to_string(), 11);
-        table.insert("HM".to_string(), 12);
-        table.insert("GD".to_string(), 13);
-        table.insert("PD".to_string(), 14);
-        table.insert("OS".to_string(), 15);
-        table.insert("@".to_string(), 16);
-        table.insert("#".to_string(), 17);
-        table.insert("K".to_string(), 18);
-
-        Symbols { table }
-    }
-
-    pub fn insert(&mut self, key: &String, val: u16) {
-        if self.table.insert(key.clone(), val).is_some() {
-            eprintln!("Label {} already previously found in symbols table", key);
-            std::process::exit(1);
-        }
-    }
-
-    pub fn get(&self, key: &String) -> u16 {
-        *self.table.get(key).unwrap()
-    }
-}
+use crate::Symbols;
 
 pub struct Assembler {
     file: String,
@@ -57,9 +14,8 @@ pub struct Assembler {
 
 impl Assembler {
     pub fn run(filename: String) {
-        match fs::remove_file("program.bin") {
-            Ok(_) => (),
-            Err(err) => eprintln!("{}", err),
+        if fs::remove_file("program.bin").is_ok() {
+            info!("Removed previously existing program.bin");
         }
         let mut ass = Assembler::new(filename);
         ass.run_first_pass();
@@ -100,6 +56,11 @@ impl Assembler {
             }
         }
         let d_len = self.distances.len() - 1;
+        if d_len < 1 {
+            eprintln!("File does not have enough basic blocks: A basic block must
+ start with @ /xyz, and end with # LABEL");
+            std::process::exit(1);
+        }
         self.distances = self.distances[1..d_len].to_vec();
     }
 
@@ -151,26 +112,26 @@ impl Assembler {
         (msb, lsb)
     }
 
-    fn parse_nums(&self, argument: &String) -> u16 {
-        if argument.starts_with("/") {
+    fn parse_nums(&self, argument: &str) -> u16 {
+        if argument.starts_with('/') {
             let a =  u16::from_str_radix(&argument[1..], 16).unwrap();
             return a;
         }
         argument.parse::<u16>().unwrap()
     }
 
-    fn convert_argument(&self, argument: &String) -> u16 {
-        if argument.contains("+") {
+    fn convert_argument(&self, argument: &str) -> u16 {
+        if argument.contains('+') {
             let words = argument
-                .split("+")
+                .split('+')
                 .map(|x| x.to_owned())
                 .collect::<Vec<String>>();
             return self.symbols.get(&words[0]) + words[1].parse::<u16>().unwrap();
         }
         if self.symbols.table.get(argument).is_some() {
-            return self.symbols.get(argument);
+            return self.symbols.get(&argument.to_string());
         }
-        if argument.contains("\"") {
+        if argument.contains('"') {
             return argument.chars().nth(1).unwrap() as u16;
         }
         self.parse_nums(argument)
@@ -225,7 +186,10 @@ impl Assembler {
 
     fn load_file(&self) -> Vec<String> {
         info!("Opening input asm file");
-        let file = File::open(&self.file).unwrap();
+        let file = match File::open(&self.file) {
+            Ok(x) => x,
+            Err(_) => std::process::exit(1),
+        };
         let reader = BufReader::new(file);
         reader.lines().map(|x| x.unwrap()).collect()
     }

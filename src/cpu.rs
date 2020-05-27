@@ -1,8 +1,8 @@
-use crate::MnemonicsTable;
+use crate::Mnemonics;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::{File, OpenOptions};
-use std::io::{Bytes, Read, Write};
+use std::fs;
+use std::io::{Read, Write};
 use std::io;
 
 pub struct Config {
@@ -12,7 +12,6 @@ pub struct Config {
 
 impl Config {
     pub fn new(trace: bool) -> Config {
-        // TODO: Add memory initialization with the loader
         let mut memory = vec![0; 4096];
         let loader = include_bytes!("assets/loader.bin");
         for (idx, byte) in loader.iter().skip(6).enumerate() {
@@ -28,7 +27,7 @@ pub struct CPU {
     pc: u16,
     ac: i8,
     trace: bool,
-    input_file: Bytes<File>,
+    input_file: io::Bytes<fs::File>,
     output_file: String,
 }
 
@@ -39,7 +38,7 @@ impl CPU {
             eprintln!("{}", err);
             std::process::exit(1);
         });
-        let table = MnemonicsTable::new().from_code;
+        let table = Mnemonics::new().from_code;
         info!("Starting code execution");
         loop {
             trace!("PC is {}", cpu.pc);
@@ -61,12 +60,11 @@ impl CPU {
         let pc = 0;
         let ac = 0;
         let trace = config.trace;
-        let f = File::open("program.bin")?;
+        let f = fs::File::open("program.bin")?;
         let input_file = f.bytes();
         let output_file = "output.bin".to_string();
-        match std::fs::remove_file("output.bin") {
-            Ok(_) => (),
-            Err(err) => eprintln!("{}", err),
+        if fs::remove_file("output.bin").is_ok() {
+            info!("Removed previously existing output.bin");
         }
 
         Ok(CPU {
@@ -220,7 +218,7 @@ impl CPU {
     }
 
     fn put_data(&mut self, _: u16) {
-        let mut f = OpenOptions::new()
+        let mut f = fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(&self.output_file)
