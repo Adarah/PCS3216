@@ -20,6 +20,11 @@ impl Assembler {
         let mut ass = Assembler::new(filename);
         ass.run_first_pass();
         let buffer = ass.run_second_pass();
+        // let mut d: Vec<(String, u16)> = ass.symbols.table.drain().collect();
+        // d.sort_by(|x, y| x.1.cmp(&y.1));
+        // for (k, v) in d.iter() {
+        //     println!("{}: {}", k , v);
+        // }
         let mut f = OpenOptions::new()
             .create(true)
             .write(true)
