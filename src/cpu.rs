@@ -2,23 +2,28 @@ use crate::Mnemonics;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::io::{Read, Write};
 use std::io;
+use std::io::{Read, Write};
 
 pub struct Config {
+    pub input: String,
+    pub output: String,
     pub trace: bool,
     pub memory: Vec<u8>,
 }
 
 impl Config {
-    pub fn new(trace: bool) -> Config {
+    pub fn new(input: String, output: String, loader: String, trace: bool) -> Config {
         let mut memory = vec![0; 4096];
-        let loader = include_bytes!("assets/loader.bin");
-        for (idx, byte) in loader.iter().skip(6).enumerate() {
+        let mut loader_file = fs::File::open(loader).unwrap();
+        let mut loader_buffer = Vec::new();
+        loader_file.read_to_end(&mut loader_buffer).unwrap();
+        // let loader = include_bytes!(loader);
+        for (idx, byte) in loader_buffer.iter().skip(6).enumerate() {
             memory[idx] = *byte;
         }
         trace!("Memory initialized: {:?}", memory);
-        Config { trace, memory }
+        Config { input, output, trace, memory }
     }
 }
 
@@ -48,8 +53,10 @@ impl CPU {
             debug!("");
             if cpu.trace {
                 let mut input = String::new();
-                io::stdin().read_line(&mut input).expect("error: unable to read user input");
-                println!("{}",input);
+                io::stdin()
+                    .read_line(&mut input)
+                    .expect("error: unable to read user input");
+                println!("{}", input);
             }
             // trace!("{:?}", cpu.memory);
         }
@@ -60,11 +67,11 @@ impl CPU {
         let pc = 0;
         let ac = 0;
         let trace = config.trace;
-        let f = fs::File::open("program.bin")?;
+        let f = fs::File::open(config.input)?;
         let input_file = f.bytes();
-        let output_file = "output.bin".to_string();
-        if fs::remove_file("output.bin").is_ok() {
-            info!("Removed previously existing output.bin");
+        let output_file = config.output;
+        if fs::remove_file(&output_file).is_ok() {
+            info!("Overwrote previously existing output.bin");
         }
 
         Ok(CPU {
@@ -177,9 +184,7 @@ impl CPU {
         self.memory[arg as usize] = self.ac as u8;
         debug!(
             "Mem pos {:03X} set to {:02X} ({} in decimal)",
-            arg,
-            self.ac,
-            self.ac
+            arg, self.ac, self.ac
         );
     }
 
@@ -228,7 +233,10 @@ impl CPU {
             Ok(_) => (),
             Err(err) => panic!("{}", err),
         };
-        debug!("Wrote {:02X} ({} in decimal) to output file", self.ac, self.ac);
+        debug!(
+            "Wrote {:02X} ({} in decimal) to output file",
+            self.ac, self.ac
+        );
     }
 
     fn os_call(&mut self, _: u16) {

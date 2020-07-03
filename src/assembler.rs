@@ -1,8 +1,8 @@
+use crate::Symbols;
+use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::fs;
 use std::io::{prelude::*, BufReader};
-use crate::Symbols;
 
 pub struct Assembler {
     file: String,
@@ -13,11 +13,11 @@ pub struct Assembler {
 }
 
 impl Assembler {
-    pub fn run(filename: String) {
-        if fs::remove_file("program.bin").is_ok() {
-            info!("Removed previously existing program.bin");
+    pub fn run(input_filename: String, output_filename: String) {
+        if fs::remove_file(&output_filename).is_ok() {
+            info!("Overwrote previously existing program.bin");
         }
-        let mut ass = Assembler::new(filename);
+        let mut ass = Assembler::new(input_filename);
         ass.run_first_pass();
         let buffer = ass.run_second_pass();
         // let mut d: Vec<(String, u16)> = ass.symbols.table.drain().collect();
@@ -28,7 +28,7 @@ impl Assembler {
         let mut f = OpenOptions::new()
             .create(true)
             .write(true)
-            .open("program.bin")
+            .open(&output_filename)
             .unwrap_or_else(|err| panic!("{}", err));
 
         match f.write(&buffer) {
@@ -62,8 +62,10 @@ impl Assembler {
         }
         let d_len = self.distances.len() - 1;
         if d_len < 1 {
-            eprintln!("File does not have enough basic blocks: A basic block must
- start with @ /xyz, and end with # LABEL");
+            eprintln!(
+                "File does not have enough basic blocks: A basic block must
+ start with @ /xyz, and end with # LABEL"
+            );
             std::process::exit(1);
         }
         self.distances = self.distances[1..d_len].to_vec();
@@ -119,7 +121,7 @@ impl Assembler {
 
     fn parse_nums(&self, argument: &str) -> u16 {
         if argument.starts_with('/') {
-            let a =  u16::from_str_radix(&argument[1..], 16).unwrap();
+            let a = u16::from_str_radix(&argument[1..], 16).unwrap();
             return a;
         }
         argument.parse::<u16>().unwrap()

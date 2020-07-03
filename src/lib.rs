@@ -14,7 +14,6 @@ pub struct Mnemonics<'a> {
     pub from_code: HashMap<u8, &'a str>,
 }
 
-
 impl<'a> Mnemonics<'a> {
     pub fn new() -> Mnemonics<'a> {
         let mut from_mnemonic: HashMap<&str, u16> = HashMap::new();
@@ -49,7 +48,6 @@ impl<'a> Mnemonics<'a> {
         self.from_mnemonic.insert(symbol, address);
     }
 }
-
 
 #[derive(Debug)]
 struct Symbols {
