@@ -1,0 +1,85 @@
+#+TITLE: Projeto/Prova P2 de PCS3216
+
+Esse repositório contém uma implementação em Rust de uma CPU e Assembler. Também
+possui um intrepretador de uma linguagem de programação fictícia e um
+interpretador de uma linguagem de controle, ambos escritos em Python.
+
+* Instalação
+ Somente testado no kernel =5.4.44-1-MANJARO=, Rust 1.43.1, Python 3.8.3. As
+ depêndencias se encontram no arquivos =.toml= na raíz do repositório.
+ 1. Clone o repositório
+ 2. Copie a pasta =example=
+
+* Uso
+Para utilizar a CPU/Assembler/Interpretador, escreva um script usando a
+linguagem de controle especifícada na prova e forneça ele como argumento para o
+executável =controle=. Dentro da pasta =example= existe um script de exemplo
+chamado =main.ctrl=, que será explicado mais adiante. As /paths/ dos arquivos
+devem ser todas relativas à raiz do valor fornecido à variável =$DISK= no começo
+do programa. Por exemplo, se eu tenho um arquivo à ser montado pelo
+Assembler chamado =disco/foo.asm=, sendo o disco da MVN uma pasta chamada =disco=,
+a maneira correta de invocar o assembler seria:
+#+BEGIN_SRC
+$JOB admin
+$DISK disco
+$DISKFILE sisprog   -- sisprog eh o nome do executavel que contem o assembler/cpu
+$INFILE foo.asm
+$OUTFILE out.bin    -- sera salvo em disco/out.bin
+$RUN assembler
+$ENDJOB
+#+END_SRC
+
+** Ressalvas
+O interpretador espera que os valores fornecidos pelo usuário estejam dentro do arquivo
+=$DISK/inputs/interpreter_input.txt=. O script a ser executado no
+interpretador pode estar em qualquer local dentro do diretório =$DISK=.
+
+A CPU precisa do loader montado em linguagem de máquina para funcionar corretamente. Ela espera que o aquivo do loader se encontre em =$DISK/build/loader.bin=
+Caso a linguagem de controle não tivesse a restrição de apenas um arquivo de
+entrada, seria possível evitar essas "gambiarras", mas na falta de tempo, essa
+foi a solução encontrada.
+
+Os arquivos =interpretador.py= e =sisprog= devem estar dentro do disco da MVN.
+Resumidamente, é eseencial que a estrutura dos diretórios contenha pelo menos isso:
+[[file:./images/screenshot-01.png]]
+
+Os outros arquivos podem estar organizados de acordo com a preferência de cada usuário.
+
+* Comandos de controle
+** $Job
+Apesar do nome, é um comando de "Login" (conforme especificado no enunciado da prova). Os únicos usuários autorizados são "admin" e "somebody". Como não foi pedido, não foram adicionados comandos para registrar novos usuários
+** $DISK
+Seleciona uma pasta do host para ser usado como disco do interpretador, CPU, e Assembler
+** $DISKFILE
+Aqui fiquei em dúvida sobre o significado do comando devido o enunciado estar um
+pouco vago, e não haver exemplos nem mesmo nas aulas 23 e 24. Minha
+interpretação é que esse comando especifíca o executável a ser utilizado. Por exemplo:
+#+BEGIN_SRC
+$DISK disk
+$DISKFILE sisprog           -- especifica disk/sisprog como o executavel atual
+$DISKFILE interpretador.py  -- Troca o executavel para disk/interpretador.py
+#+END_SRC
+
+** $CREATE
+Simplesmente cria um arquivo vazio. É análogo ao comando =touch= em sistemas Linux. Como não foi pedido, não implementei um comando para criar pastas (o análogo seria =mkdir=)
+** $DELETE
+Delete um arquivo. É análogo ao comando =rm= em sistemas Linux
+** $INFILE
+Especifíca um arquivo como entrada da CPU/Assembler/Interpretador
+** $OUTFILE
+Especifíca um arquivo como saída da CPU/Assembler/Interpretador
+** $RUN
+Executa a CPU/Assembler/Interpretador. Segue mais um exemplo:
+#+BEGIN_SRC
+$RUN assembler
+$RUN cpu
+$RUN interpreter
+#+END_SRC
+No momento, esses são os três únicos modos de execução disponíveis.
+
+* A CPU
+TODO: Descrever a cpu brevemente
+* O Assembler
+TODO: Descrever o assembler brevemente
+* O Interpretador
+TODO: Descrever o interpretador brevemente
