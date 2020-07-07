@@ -42,6 +42,9 @@ class Line:
     keyword: str
     expression: List[str]
 
+    def __str__(self):
+        return self.keyword + " " + " ".join(self.expression)
+
 
 def preprocess(filename: str) -> Dict[str, Line]:
     line_stream = make_line_stream(filename)
@@ -50,13 +53,20 @@ def preprocess(filename: str) -> Dict[str, Line]:
     for line_num, line in enumerate(line_stream):
         if line[0] in keywords:
             d[str(line_num)] = Line(line[0], line[1:])
-        elif line[1] == ":":
+        elif line[1] == ":" and line[2] in keywords:
             # label : keyword expression expression expression
             # index 1 is a colon
             d[line[0]] = Line(line[2], line[3:])
         else:
-            print(line)
-            print("Parsing error: Expected statement or label, got neither")
-            sys.exit(1)
+            e = SyntaxError("Expected statement or label, got neither")
+            l = Line("", line)
+            make_graceful(l, e)
 
     return d
+
+
+def make_graceful(line: Line, e: Exception):
+    print(line)
+    print(type(e).__name__, end=": ")
+    print(e)
+    sys.exit(1)

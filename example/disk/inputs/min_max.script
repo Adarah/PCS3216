@@ -1,0 +1,26 @@
+LET max = 0
+LET min = 9999
+LET current = 0
+
+loop : READ num
+       GOTO end IF num = 0
+
+       GOTO assign_max IF num > max
+       GOTO assign_min IF num < min
+       GOTO prints
+
+       assign_max : LET max = num
+                    # in the first iteration, the number will be higher than max and lower than min
+                    GOTO prints IF min < num
+
+       assign_min : LET min = num
+
+       prints : WRITE num
+                WRITE max
+                WRITE min
+
+       GOTO loop
+
+# Pra fazer um jump, eu preciso de uma expressao, pois nessa linguagem nao eh
+# possivel haver labels por si so
+end : LET num = 0  # PS: Eu adicionei a funcionalidade para ignorar comentarios

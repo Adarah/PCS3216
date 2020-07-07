@@ -1,6 +1,7 @@
 use crate::Symbols;
 use std::fs;
 use std::fs::File;
+use std::path::Path;
 use std::fs::OpenOptions;
 use std::io::{prelude::*, BufReader};
 
@@ -25,10 +26,14 @@ impl Assembler {
         // for (k, v) in d.iter() {
         //     println!("{}: {}", k , v);
         // }
+        let save_path = Path::new(&output_filename);
+        if !save_path.exists() {
+            fs::create_dir_all(save_path.parent().unwrap()).unwrap();
+        }
         let mut f = OpenOptions::new()
             .create(true)
             .write(true)
-            .open(&output_filename)
+            .open(save_path)
             .unwrap_or_else(|err| panic!("{}", err));
 
         match f.write(&buffer) {

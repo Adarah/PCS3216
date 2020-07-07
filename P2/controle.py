@@ -1,3 +1,4 @@
+import argparse
 import os
 import subprocess
 import sys
@@ -25,9 +26,9 @@ class State(Enum):
 
 
 class ControleMVN:
-    def __init__(self):
+    def __init__(self, input_file):
         self.state: State = State.WAITING_DOLLAR
-        self.char_stream: Iterator[str] = make_char_stream("test.txt")
+        self.char_stream: Iterator[str] = make_char_stream(input_file)
         self.buffer: str = ""
         self.allowed_users: Set[str] = set(
             ["admin", "somebody",]
@@ -163,6 +164,9 @@ class ControleMVN:
                     f"{loader_path}",
                 ]
             )
+        elif mode == "interpreter":
+            code = subprocess.run(["python3", f"{self.executable}", self.out, self.inp])
+
         else:
             print("The sisprog rust binary only accepts two modes: cpu or assembler")
             raise ValueError
@@ -172,5 +176,9 @@ class ControleMVN:
 
 
 if __name__ == "__main__":
-    c = ControleMVN()
+    parser = argparse.ArgumentParser(description="Shell for PCS3216 modules")
+    parser.add_argument("INPUT", type=str, help="The file with the control commands")
+
+    args = parser.parse_args()
+    c = ControleMVN(args.INPUT)
     c.execute()

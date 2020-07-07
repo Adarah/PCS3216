@@ -1,6 +1,7 @@
 use crate::Mnemonics;
 use std::collections::HashMap;
 use std::error::Error;
+use std::path::Path;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
@@ -72,6 +73,10 @@ impl CPU {
         let output_file = config.output;
         if fs::remove_file(&output_file).is_ok() {
             info!("Overwrote previously existing output.bin");
+        }
+        let save_path = Path::new(&output_file);
+        if !save_path.exists() {
+            fs::create_dir_all(save_path.parent().unwrap()).unwrap();
         }
 
         Ok(CPU {
