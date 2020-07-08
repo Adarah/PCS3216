@@ -212,7 +212,11 @@ $ENDJOB
 #+END_SRC
 
 Aqui apenas testamos o comando =$LIST= que ainda não havia sido utilizado, e em
-seguida testamos a integração com o interpretador. A saída é possui o valor esperado, conforme testado previamente no item anterior.
+seguida testamos a integração com o interpretador. A saída é possui o valor
+esperado, conforme testado previamente no item anterior.
+
+As saídas do montador se encontra na pasta =example/disk/build=.
+As saídas da CPU e do interpretador se encontram em =example/disk/outputs=.
 
 * Apêndice A
 Arquivo contendo um script de teste de integração da linguagem de controle e os subsistemas:
