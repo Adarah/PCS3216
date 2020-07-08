@@ -1,6 +1,8 @@
 #+TITLE: Projeto/Prova P2 de PCS3216
+#+LaTeX_HEADER: \usepackage[x11names]{xcolor}
+#+LaTeX_HEADER: \hypersetup{linktoc = all, colorlinks = true, urlcolor = DodgerBlue4, citecolor = PaleGreen1, linkcolor = black}
 
-Esse repositório contém uma implementação em Rust de uma CPU e Assembler. Também
+Esse repositório (https://github.com/Adarah/PCS3216) contém uma implementação em Rust de uma CPU e Assembler. Também
 possui um intrepretador de uma linguagem de programação fictícia e um
 interpretador de uma linguagem de controle, ambos escritos em Python.
 
@@ -40,7 +42,8 @@ entrada, seria possível evitar essas "gambiarras", mas na falta de tempo, essa
 foi a solução encontrada.
 
 Os arquivos =interpretador.py= e =sisprog= devem estar dentro do disco da MVN.
-Resumidamente, é eseencial que a estrutura dos diretórios contenha pelo menos isso:
+Resumidamente, é essencial que a estrutura dos diretórios contenha pelo menos isso:
+
 [[file:./images/screenshot-01.png]]
 
 Os outros arquivos podem estar organizados de acordo com a preferência de cada usuário.
@@ -77,9 +80,233 @@ $RUN interpreter
 #+END_SRC
 No momento, esses são os três únicos modos de execução disponíveis.
 
-* A CPU
-TODO: Descrever a cpu brevemente
-* O Assembler
-TODO: Descrever o assembler brevemente
-* O Interpretador
-TODO: Descrever o interpretador brevemente
+* Teste da linguagem de programação
+O interpretador segue o modelo fornecido no enunciado da prova: é uma máquina de
+estados com rotinas de tratamento específicas para cada situação. Para
+exemplificar o seu funcionamento, vamos analisar o arquivo
+=example/disk/inputs/min_max.script=, cujo conteúdo se encontra abaixo:
+#+BEGIN_SRC
+LET max = 0
+LET min = 9999
+LET current = 0
+
+loop : READ num
+       GOTO end IF num = 0
+
+       GOTO assign_max IF num > max
+       GOTO assign_min IF num < min
+       GOTO prints
+
+       assign_max : LET max = num
+                    # in the first iteration, the number will be higher than max and lower than min
+                    GOTO prints IF min < num
+
+       assign_min : LET min = num
+
+       prints : WRITE num
+                WRITE max
+                WRITE min
+
+       GOTO loop
+
+# Pra fazer um jump, eu preciso de uma expressao, pois nessa linguagem nao eh
+# possivel haver labels por si so
+end : LET num = 0  # PS: Eu adicionei a funcionalidade para ignorar comentarios
+#+END_SRC
+
+Primeiro assinalamos os valores de máximo, mínimo, e inicializamos a variável
+=current= que irá conter o valor do número atual sendo lido. Em seguida, criamos
+uma label chamada =loop= para que possamos retornar à operação de leitura do
+arquivo de entrada do interpretador (=$DISK/inputs/interpreter_input.txt=). Em
+seguido, são realizadas operações de jump condicional para saber se iremos
+sobreescrever o valor atual das variáveis =max= e =min=. Finalmente, escrevemos
+o valor de num, max, e min no arquivo =$OUTFILE=, e entquanto o valor do número
+lido não for 0, iremos refazer essas operações.
+
+** Resultado
+Usando a sequência numérica [67, 9, 22, 85, 52, 5, 5, 83, 93, 33, 0] como entrada para o arquivo
+=min_max.script=, obtemos a seguinte saída:
+#+BEGIN_SRC
+67
+67
+67
+9
+67
+9
+22
+67
+9
+85
+85
+9
+52
+85
+9
+5
+85
+5
+5
+85
+5
+83
+85
+5
+93
+93
+5
+33
+93
+5
+#+END_SRC
+
+* Testes da linguagem de comando e integração
+O conteúdo do arquivo de entrada para teste foi divido em algumas partes para
+facilitar a explicação. O arquivo sem divisões se encontra no apêndice A:
+#+BEGIN_SRC
+$JOB admin
+$DISK disk
+$DISKFILE sisprog
+$DIRECTORY
+$CREATE delete_me
+$CREATE keep_me
+$DELETE delete_me
+#+END_SRC
+Na primeira linha, fazemos o login no sistema usando o usuário "admin". Em
+seguida, especificamos a pasta =example/disk= como sendo o disco das nossas
+MVNs. Então especificamos o arquivo =$DISK/sisprog= como sendo o executável a
+ser utilizado (lembrando que =sisprog= é o binário escrito em Rust que contém a
+CPU e o montador).
+
+Usamos =$DIRECTORY= simplesmente para testar a funcionalidade, e então criamos
+dois arquivos, e deletamos um deles.
+
+#+BEGIN_SRC
+-- Precisamos montar o loader primeiro
+$INFILE inputs/loader.asm
+$OUTFILE build/loader.bin
+$RUN assembler
+
+$INFILE inputs/hello_world.asm
+$OUTFILE build/SM
+$RUN assembler
+
+$INFILE build/SM
+$OUTFILE outputs/cpu_output
+$RUN cpu
+#+END_SRC
+
+A primeira coisa a ser fazer agora é fazer a montagem do loader, e gravar em
+=$DISK/build/loader.bin=. Em seguida, montamos o arquivo
+=$DISK/inputs/hello_world.asm= (Apêndice B). Finalmente, executamos o código
+objeto gerado pelo Assembler na nossa CPU.
+
+#+BEGIN_SRC
+$LIST inputs/hello_world.asm
+
+$DISKFILE interpretador.py
+$OUTFILE outputs/interpreter_output
+$INFILE inputs/min_max.script
+$RUN interpreter
+
+$ENDJOB
+#+END_SRC
+
+Aqui apenas testamos o comando =$LIST= que ainda não havia sido utilizado, e em
+seguida testamos a integração com o interpretador. A saída é possui o valor esperado, conforme testado previamente no item anterior.
+
+* Apêndice A
+Arquivo contendo um script de teste de integração da linguagem de controle e os subsistemas:
+#+BEGIN_SRC
+$JOB admin
+$DISK disk
+$DISKFILE sisprog
+$DIRECTORY
+$CREATE delete_me
+$CREATE keep_me
+$DELETE delete_me
+
+-- Precisamos montar o loader primeiro
+$INFILE inputs/loader.asm
+$OUTFILE build/loader.bin
+$RUN assembler
+
+$INFILE inputs/hello_world.asm
+$OUTFILE build/SM
+$RUN assembler
+
+$INFILE build/SM
+$OUTFILE outputs/cpu_output
+$RUN cpu
+
+$LIST inputs/hello_world.asm
+
+$DISKFILE interpretador.py
+$OUTFILE outputs/interpreter_output
+$INFILE inputs/min_max.script
+$RUN interpreter
+
+$ENDJOB
+#+END_SRC
+
+* Apêndice B
+Listagem do arquivo =hello_world.asm=. O comportamento esperado é que a CPU gere
+um arquivo que diga "Hello world"
+#+BEGIN_SRC
+ @ /F00
+
+START
+    LD  LDA0
+    MM  LDA
+    LD  LDA0+1
+    MM  LDA+1
+
+LDA
+    K   0
+    K   0
+    PD  0
+    LD  LDA+1
+    +   ONE
+    MM  LDA+1
+    JZ  CARRY
+
+CHECK_IF_DONE
+    LD  LEN
+    -   ONE
+    MM  LEN
+    JZ  END
+    JP  LDA
+
+CARRY
+    LD  LDA
+    +   ONE
+    MM  LDA
+    JP  CHECK_IF_DONE
+
+
+END
+    HM  0
+
+
+@ /100
+LEN     K   12
+ONE     K   1
+COUNT   K   0
+
+LDA0    LD  DATA
+
+@ /200
+DATA
+    K   "H"
+    K   "e"
+    K   "l"
+    K   "l"
+    K   "o"
+    K   ","
+    K   32                      ; Assembler breaks if you try to use a space character
+    K   "w"
+    K   "o"
+    K   "r"
+    K   "l"
+    K   "d"
+    # START
+#+END_SRC
